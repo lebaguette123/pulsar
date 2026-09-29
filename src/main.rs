@@ -15,9 +15,11 @@ const GPIOD_MODER_PIN12_SHIFT: u32 = 24;
 
 const GPIOD_BSRR: u32 = GPIOD_BASE + 0x18;
 const GPIOD_BSRR_BS12: u32 = 1<<12;
+const GPIOD_BSRR_BR12: u32 = 1<<28;
 
 const SYSTICK_BASE: u32 = 0xE000_E010;
 const SYST_CSR: u32 = SYSTICK_BASE + 0x00;
+const COUNTFLAG_BIT: u32 = 16;
 const SYST_RVR: u32 = SYSTICK_BASE + 0x04;
 const SYST_CVR: u32 = SYSTICK_BASE + 0x08;
 
@@ -32,10 +34,12 @@ fn main() -> !{
     write_reg(GPIOD_MODER, (before_pinmode & clear_mask) | new_pinmode);
     write_reg(GPIOD_BSRR, GPIOD_BSRR_BS12);
 
-    write_reg(SYST_CVR, 0);
     write_reg(SYST_RVR, 0x00F4_23FF);
-    let enable = 0b101;
-    write_reg(SYST_CSR, enable);
+    write_reg(SYST_CVR, 0);
+    let enable_core_clock = 0b101;
+    write_reg(SYST_CSR, enable_core_clock);
+    wait();
+    write_reg(GPIOD_BSRR, GPIOD_BSRR_BR12);
     loop {}
 }
 
@@ -45,4 +49,13 @@ fn write_reg(addr: u32, val: u32){
 
 fn read_reg(addr: u32) -> u32{
     unsafe {read_volatile(addr as *const u32)}
+}
+
+fn wait(){
+    loop{
+        let csr = read_reg(SYST_CSR);
+        if csr & (1<<COUNTFLAG_BIT) != 0{
+            break
+        }
+    }
 }

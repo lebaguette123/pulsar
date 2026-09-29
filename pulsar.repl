@@ -1,0 +1,4 @@
+using "C:/Program Files/Renode/platforms/boards/stm32f4_discovery-kit.repl"
+
+nvic:
+    systickFrequency: 16000000
